@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Simulador ACL | Actúa como router · ENSA</title>
+<style>
+:root{--ink:#172b46;--muted:#587087;--blue:#205d96;--blue-light:#eaf3fb;--line:#d9e2ea;--canvas:#f6f8fa;--white:#fff;--green:#1c754f;--green-light:#eaf8ef;--red:#b33232;--red-light:#fff0ee;--amber:#805715;--amber-light:#fff8e7;--r:13px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);background:var(--canvas);font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5}
+button,select,input{font:inherit}
+button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.52}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #6a9fda;outline-offset:2px}
+.wrap{max-width:1250px;margin:0 auto;padding:22px 22px 50px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:17px;border-bottom:1px solid var(--line)}
+.kicker{margin:0 0 5px;color:var(--blue);font-weight:bold;letter-spacing:.055em;text-transform:uppercase;font-size:12px}
+h1{font-size:clamp(25px,3vw,36px);margin:0 0 7px;letter-spacing:-.035em;line-height:1.13}h2{font-size:21px;margin:0;line-height:1.3}h3{font-size:16px;margin:0 0 8px}p{margin:0}.sub{max-width:750px;color:var(--muted);font-size:15px}.tag{border:1px solid #cbdbe8;border-radius:10px;padding:7px 11px;background:white;color:var(--blue);font-size:12px;font-weight:700;white-space:nowrap}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:17px 0}
+.metric{background:white;border:1px solid var(--line);border-radius:10px;padding:11px 16px;min-height:72px}
+.metric .num{font-size:23px;font-weight:750;line-height:1.15;font-variant-numeric:tabular-nums}.metric .lbl{color:var(--muted);font-size:12px;margin-top:3px}
+.controls{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:0 0 13px}
+.control-group{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.control-group label{font-size:13px;font-weight:bold;color:var(--muted)}
+select,input[type="text"]{border:1px solid #cbd7e3;border-radius:9px;padding:9px 10px;background:#fff;color:var(--ink);max-width:100%}
+.btn{background:white;border:1px solid #c5d4e2;color:var(--ink);padding:10px 15px;border-radius:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;text-align:center}
+.btn:hover:not(:disabled){border-color:#6793ba;background:#f4f8fc}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.primary:hover:not(:disabled){background:#174b7b}
+.btn.ghost{background:transparent}.btn.small{padding:7px 12px;font-size:13px;min-height:36px}
+.progress-label{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;gap:10px;margin:10px 0 7px}.track{height:6px;border-radius:99px;background:#dfe8ef;overflow:hidden;margin-bottom:16px}.fill{height:100%;width:0;background:var(--blue);transition:width .3s}
+.layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(340px,.9fr);gap:16px;align-items:start}
+.panel{background:white;border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:0 1px 2px rgba(15,38,65,.03)}
+.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.level{border:1px solid #c2d9ec;border-radius:20px;padding:3px 9px;color:var(--blue);background:var(--blue-light);font-size:12px;font-weight:700}
+.description{color:var(--muted);font-size:14px;margin:0 0 17px}
+.linehead{display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;gap:8px}
+.linehead h3{margin:0}
+.route{display:grid;grid-template-columns:1fr .32fr .9fr .32fr 1fr;align-items:center;gap:4px;padding:18px 12px;background:#fbfdff;border:1px solid #dde7ef;border-radius:11px;min-height:146px}
+.node{text-align:center;min-width:0}
+.node .ico{margin:0 auto 8px;width:48px;height:39px;border:3px solid #295e86;border-radius:6px;position:relative;background:#e8f3fb}
+.node.pc .ico:before{content:"";position:absolute;left:17px;bottom:-9px;width:10px;height:6px;background:#295e86}
+.node.pc .ico:after{content:"";position:absolute;left:9px;bottom:-12px;width:25px;height:3px;background:#295e86}
+.node.router .ico{height:47px;width:66px;border-radius:48%;background:#d7eafd}
+.node.router .ico:before{content:"↔";font-weight:bold;color:var(--blue);position:absolute;inset:0;font-size:32px;line-height:39px}
+.node .name{font-weight:bold;font-size:14px}.node .detail{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.link{height:2px;background:#8ba9c1;position:relative}.link:after{content:"";position:absolute;right:-1px;top:-5px;border:6px solid transparent;border-left-color:#8ba9c1}.route-ports{display:flex;justify-content:space-between;gap:8px;margin-top:9px;color:var(--muted);font-size:12px}
+.packet{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.fact{border:1px solid #e1e8ee;border-radius:9px;padding:9px 11px;min-width:0;background:#fcfdff}
+.fact .key{font-size:11px;letter-spacing:.04em;font-weight:bold;color:#687e92;text-transform:uppercase}.fact .value{font-size:15px;font-weight:700;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.aclbox{margin-top:16px;background:#f8fafc;border:1px solid #dae4ed;border-radius:10px;overflow:hidden}
+.aclheader{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 13px;border-bottom:1px solid #dce5ed;background:#eef4f9}
+.aclheader strong{font-size:14px}.attach{font-size:12px;color:#194c77;font-weight:700;background:#fff;padding:4px 8px;border:1px solid #d3e0ec;border-radius:6px}
+.aclrows{padding:10px 12px}.aclrow{display:flex;gap:9px;align-items:flex-start;padding:8px 7px;border-radius:6px;border:1px solid transparent}
+.aclrow+.aclrow{margin-top:3px}.aclrow.match{background:#e6f6ed;border-color:#a4d4b6}.aclrow.skipped{color:#66798b;background:#edf2f7}.ace-index{font-weight:700;color:#5b7188;min-width:46px;font-size:12px;padding-top:3px}
+.aclrow code{color:#142d47;font:600 13px/1.55 Consolas,Monaco,"Courier New",monospace;overflow-wrap:anywhere;word-break:break-word}
+.hidden-deny{font-size:12px;color:var(--muted);padding:0px 18px 13px}
+.note{color:#5c6d7f;font-size:12px;margin-top:12px}
+.quiz h2{margin-bottom:7px}.quiz .prompt{margin-bottom:17px;color:var(--muted);font-size:14px}
+.choices{display:grid;gap:9px}.choice{display:flex;align-items:center;gap:12px;border:1px solid #cedae6;padding:13px 14px;border-radius:10px;background:white;min-height:61px;text-align:left;transition:background .12s,border-color .12s;width:100%;color:var(--ink)}
+.choice:hover:not(:disabled){background:#f4f8fc;border-color:#8cbbdb}.choice.selected{background:#e9f3fd;border-color:#377bb1;box-shadow:inset 0 0 0 1px #377bb1}.choice .letter{width:28px;height:28px;flex:none;background:#e9eff4;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#536b7f}.choice.selected .letter{background:var(--blue);color:white}.choice .ctext{font-weight:700;font-size:14px}
+.field{margin:17px 0 0}.field label{display:block;font-weight:700;margin-bottom:7px;font-size:14px}.field select{width:100%}.field small{display:block;color:var(--muted);margin-top:5px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}.actions .primary{flex:1}
+.hint{padding:12px 13px;margin-top:13px;border:1px solid #ead7a8;background:var(--amber-light);color:#684d1a;border-radius:8px;font-size:13px}
+.feedback{margin-top:17px;padding:14px;border-radius:10px;border:1px solid var(--line)}.feedback.ok{background:var(--green-light);border-color:#b7debf}.feedback.bad{background:var(--red-light);border-color:#e7b5b0}.feedback .ftitle{font-weight:750;font-size:17px;margin-bottom:4px}.feedback p{font-size:14px}.case-explanation{padding:11px 0 4px}.case-explanation h3{font-size:15px;margin:0 0 5px;color:var(--ink)}.case-explanation p{margin:0 0 8px}.your-answer{margin-top:7px}.your-answer strong{font-weight:800}
+.trace{margin-top:12px}.trace h3{margin:0 0 8px}.trace-item{border-left:3px solid #8da4b9;padding:6px 0 7px 12px;font-size:13px;margin:4px 0}.trace-item.hit{border-color:var(--green);background:#f2faf5}.trace-item.implicit{border-color:var(--red)}.trace-item strong{display:block}.trace-item span{color:#52667a}
+.summary{padding:15px 5px 5px;text-align:center}.summary strong{font-size:27px;color:var(--blue)}.summary p{margin-top:10px;color:var(--muted)}
+.foot{border-top:1px solid var(--line);margin-top:23px;padding-top:18px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}.foot p{color:var(--muted);font-size:13px;max-width:820px}
+.screen-reader{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+/* Diagrama: las interfaces resaltadas representan el recorrido real del paquete. */
+.route{grid-template-columns:minmax(176px,1.2fr) minmax(74px,.63fr) minmax(88px,.7fr) minmax(74px,.63fr) minmax(176px,1.2fr);gap:6px;min-height:207px;padding:16px 10px;background:#fff;overflow-x:auto}
+.endpoint{padding:12px 6px;border-radius:10px;min-height:165px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.origin-node{background:#ebf5ff;border:2px solid #3d83bd}
+.destination-node{background:#eff9f4;border:2px solid #39856b}
+.endpoint-label{font-size:11px;font-weight:800;letter-spacing:.025em;color:#204d76;margin-bottom:12px;white-space:nowrap}
+.destination-node .endpoint-label{color:#236548}
+.endpoint .ico{margin-bottom:12px}
+.address-display{display:block;min-width:0;width:100%;padding:6px 6px;background:white;border:1px solid #c9dce9;border-radius:6px;color:#143654;font-size:clamp(13px,1.08vw,15px);font-weight:800;line-height:1.3;white-space:nowrap;overflow-wrap:normal;word-break:normal;text-align:center;font-variant-numeric:tabular-nums}
+.destination-node .address-display{border-color:#b7d6c6;color:#165740}
+.edge{display:grid;grid-template-rows:54px 24px 28px;align-items:center;justify-items:center;gap:7px;min-width:0}
+.edge .link{width:100%;height:4px;background:#70899f}
+.edge .link:after{border-left-color:#70899f;top:-4px}
+.interface-label{display:flex;flex-direction:column;gap:0;align-items:center;justify-content:center;min-width:76px;padding:3px 9px;border:2px solid;border-radius:9px;font-variant-numeric:tabular-nums;line-height:1.18;box-shadow:0 2px 0 rgba(15,38,65,.08)}
+.interface-label strong{font-size:19px;font-weight:900;letter-spacing:.025em}
+.interface-label span{font-size:14px;font-weight:800}
+.inlabel{color:#0a4c86;border-color:#267cba;background:#ddecff}
+.outlabel{color:#764613;border-color:#c08b38;background:#fff1d8}
+.acl-on-port{font-size:11px;color:#165d40;background:#e7f8eb;padding:3px 5px;border:1px solid #8bc7a1;border-radius:5px;font-weight:800;text-align:center;white-space:nowrap}
+.node.router .name{font-size:16px}.node.router .detail{font-size:11px}
+.placement-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 12px;margin-top:10px;border:1px solid #cbdce9;border-radius:9px;background:#f3f8fd}
+.placement-caption{font-size:11px;font-weight:800;letter-spacing:.03em;color:#496980}
+.placement-value{border:2px solid #205d96;padding:3px 10px;border-radius:7px;background:white;color:#154c77;font-size:14px;font-variant-numeric:tabular-nums}
+.placement-help{flex-basis:100%;color:#526c80;font-size:12px}
+.fact.source-fact,.fact.destination-fact{border-width:2px}
+.fact.source-fact{background:#eaf5ff;border-color:#3d83bd}
+.fact.destination-fact{background:#eff9f4;border-color:#39856b}
+.fact.source-fact .key{color:#174c76}.fact.destination-fact .key{color:#22664b}
+.fact.source-fact .value,.fact.destination-fact .value{font-size:18px}
+@media(max-width:690px){.route{grid-template-columns:176px 78px 94px 78px 176px;min-width:0}.endpoint-label{font-size:10px}.address-display{font-size:14px}.fact.source-fact .value,.fact.destination-fact .value{font-size:15px}}
+@media(max-width:950px){.layout{grid-template-columns:1fr}.quiz{order:2}.route{grid-template-columns:176px 78px 94px 78px 176px}}
+@media(max-width:550px){.wrap{padding:14px 11px 30px}.top{display:block}.top .tag{display:inline-block;margin-top:10px}.metrics{grid-template-columns:repeat(2,1fr)}.panel{padding:14px}.route{gap:5px;padding:14px 7px}.node .ico{transform:scale(.83);margin-bottom:0}.node .name{font-size:12px}.node .detail{font-size:10px}.packet{gap:6px}.fact{padding:8px}.fact .value{font-size:13px}.ace-index{min-width:34px}.aclrow code{font-size:12px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media print{.controls,.actions,.foot button,.hint,.choices{display:none!important}body{background:white}.panel,.metric{box-shadow:none;break-inside:avoid}.layout{display:block}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div><div class="kicker">Cisco ENSA · Módulo 4 · Aprendizaje activo</div><h1>Actúa como un router: decisiones con ACL</h1><p class="sub">Lee cada paquete, revisa dónde está aplicada la ACL y decide qué hará el router. La primera ACE que coincida determina la acción; si ninguna coincide, interviene el <strong>deny implícito</strong>.</p></div>
+    <div class="tag">HTML5 · Sin conexión · Un solo archivo</div>
+  </header>
+
+  <section class="metrics" aria-label="Estadísticas de la actividad">
+    <div class="metric"><div class="num" id="statCount">0 / 18</div><div class="lbl">Casos resueltos</div></div>
+    <div class="metric"><div class="num" id="statCorrect">0</div><div class="lbl">Respuestas correctas</div></div>
+    <div class="metric"><div class="num" id="statPercent">0 %</div><div class="lbl">Porcentaje de aciertos</div></div>
+    <div class="metric"><div class="num" id="statStreak">0</div><div class="lbl">Racha actual</div></div>
+  </section>
+
+  <section class="controls" aria-label="Opciones de práctica">
+    <div class="control-group"><label for="filter">Seleccionar práctica:</label><select id="filter"><option value="all">Todos los escenarios (18 · orden aleatorio)</option><option value="1">Nivel 1 · ACL estándar</option><option value="2">Nivel 2 · Dirección de aplicación</option><option value="3">Nivel 3 · ACL extendida</option></select></div>
+    <div class="control-group"><button class="btn small ghost" type="button" id="restart">Reiniciar actividad</button><button class="btn small ghost" type="button" id="export">Exportar resultados CSV</button></div>
+  </section>
+  <div class="progress-label"><span id="progressLabel">Escenario 1</span><span id="progressMeta">18 escenarios</span></div>
+  <div class="track"><div class="fill" id="progressFill"></div></div>
+
+  <div class="layout">
+    <section class="panel" aria-label="Escenario y reglas de acceso">
+      <div class="sectionhead"><h2 id="scenarioTitle">Escenario</h2><span class="level" id="levelBadge">Nivel 1</span></div>
+      <p id="scenarioDescription" class="description"></p>
+      <div class="linehead"><h3>Recorrido del paquete</h3><span class="level" id="directionBadge">Entrada</span></div>
+      <div class="route" id="networkDiagram" aria-label="Recorrido real del paquete: origen, interfaz IN de R1, interfaz OUT de R1 y destino">
+        <div class="node pc endpoint origin-node">
+          <div class="endpoint-label">IP DE ORIGEN</div>
+          <div class="ico" aria-hidden="true"></div>
+          <div class="address-display" id="diagramSource">—</div>
+        </div>
+        <div class="edge edge-ingress" id="edgeIngress">
+          <div class="interface-label inlabel" title="Interfaz física por la que este paquete entra a R1"><strong>IN</strong><span id="ingressTag">G0/0</span></div>
+          <div class="link" aria-hidden="true"></div>
+          <div class="acl-on-port" id="inAclMarker" hidden>ACL aplicada</div>
+        </div>
+        <div class="node router">
+          <div class="ico" aria-hidden="true"></div>
+          <div class="name">Router R1</div>
+          <div class="detail">Evaluación de ACL</div>
+        </div>
+        <div class="edge edge-egress" id="edgeEgress">
+          <div class="interface-label outlabel" title="Interfaz física por la que este paquete sale de R1"><strong>OUT</strong><span id="egressTag">G0/1</span></div>
+          <div class="link" aria-hidden="true"></div>
+          <div class="acl-on-port" id="outAclMarker" hidden>ACL aplicada</div>
+        </div>
+        <div class="node pc endpoint destination-node">
+          <div class="endpoint-label">IP DE DESTINO</div>
+          <div class="ico" aria-hidden="true"></div>
+          <div class="address-display" id="diagramDest">—</div>
+        </div>
+      </div>
+      <div class="placement-row" aria-label="Interfaz y dirección donde se encuentra configurada la ACL">
+        <span class="placement-caption">ACL CONFIGURADA EN</span>
+        <strong class="placement-value" id="aclPlacement">—</strong>
+        <span class="placement-help">Compara esta ubicación con las interfaces IN y OUT del diagrama.</span>
+      </div>
+      <div class="linehead"><h3>Datos del paquete</h3></div>
+      <div class="packet" id="packetGrid"></div>
+      <div class="aclbox">
+        <div class="aclheader"><strong id="aclHeading">ACL</strong><span class="attach" id="attachment">—</span></div>
+        <div class="aclrows" id="aclRules"></div>
+        <div class="hidden-deny" id="implicitNote">La regla implícita no aparece en la configuración del router.</div>
+      </div>
+      <p class="note">Supón que las rutas existen y que no hay otras ACL ni políticas que modifiquen el tráfico.</p>
+    </section>
+
+    <section class="panel quiz" aria-label="Toma de decisiones">
+      <div id="questionArea">
+        <h2>¿Qué decisión toma R1?</h2>
+        <p class="prompt">Selecciona el resultado y, si corresponde, la <strong>primera ACE coincidente</strong>.</p>
+        <div class="choices" id="choices" role="group" aria-label="Resultado de la evaluación">
+          <button type="button" class="choice" data-choice="permit" aria-pressed="false"><span class="letter">A</span><span class="ctext">Permitir por una ACE</span></button>
+          <button type="button" class="choice" data-choice="deny" aria-pressed="false"><span class="letter">B</span><span class="ctext">Denegar por una ACE explícita</span></button>
+          <button type="button" class="choice" data-choice="implicit" aria-pressed="false"><span class="letter">C</span><span class="ctext">Denegar por el deny implícito</span></button>
+          <button type="button" class="choice" data-choice="bypass" aria-pressed="false"><span class="letter">D</span><span class="ctext">Esta ACL no se evalúa</span></button>
+        </div>
+        <div class="field" id="aceField" hidden><label for="aceSelect">¿Qué ACE coincide primero?</label><select id="aceSelect"><option value="">Selecciona una ACE…</option></select><small>Recuerda que las ACE se examinan de arriba hacia abajo.</small></div>
+        <div class="actions"><button class="btn primary" type="button" id="check">Comprobar decisión</button><button class="btn" type="button" id="hintBtn">Pista</button></div>
+        <p id="notice" class="note" role="status" aria-live="polite"></p>
+        <div id="hintBox" class="hint" hidden></div>
+      </div>
+      <div id="feedback" hidden aria-live="polite"></div>
+      <div id="afterCheck" class="actions" hidden><button type="button" class="btn primary" id="next">Siguiente paquete →</button></div>
+      <div id="endPanel" hidden></div>
+    </section>
+  </div>
+
+  <footer class="foot"><p><strong>Recordatorio técnico:</strong> una ACL estándar compara solo la IPv4 de origen; una extendida puede comparar protocolo, direcciones y puertos. <strong>IN</strong> se evalúa en la interfaz de entrada y <strong>OUT</strong> en la interfaz de salida. La ACL se evalúa por primera coincidencia. Para un equipo real, aplícala mediante <code>ip access-group NÚMERO in|out</code>.</p><button type="button" class="btn small" id="helpBtn">¿Cómo se juega?</button></footer>
+</main>
+<script>
+'use strict';
+/* Motor de evaluación autocontenido: el resultado se calcula desde la ACE, no se codifica en cada ejercicio. */
+const CASES = [
+ {id:1,lv:1,title:'Coincidencia con un host',desc:'Una ACL estándar tiene primero una excepción para un host y después una regla general.',n:10,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.10.10',dst:'192.168.30.20',proto:'tcp',dp:80,rules:['access-list 10 deny host 192.168.10.10','access-list 10 permit any'],hint:'En una ACL estándar solo importa la IPv4 de origen. Comprueba primero la ACE inicial.'},
+ {id:2,lv:1,title:'El siguiente host de la red',desc:'Las reglas son las mismas, pero cambia la dirección IPv4 de origen del paquete.',n:10,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.10.25',dst:'192.168.30.20',proto:'tcp',dp:80,rules:['access-list 10 deny host 192.168.10.10','access-list 10 permit any'],hint:'Si la primera ACE no coincide, el router continúa con la segunda.'},
+ {id:3,lv:1,title:'La red no autorizada',desc:'La ACL contiene una sola ACE de permiso para la red 192.168.20.0/24.',n:10,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.21.7',dst:'192.168.30.5',proto:'icmp',rules:['access-list 10 permit 192.168.20.0 0.0.0.255'],hint:'¿Qué ocurre si el paquete no coincide con ninguna ACE visible?'},
+ {id:4,lv:1,title:'Wildcard 0.0.0.63 (extremo superior)',desc:'Analiza si el último octeto pertenece al bloque indicado por la wildcard.',n:10,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.30.127',dst:'172.16.1.4',proto:'udp',dp:53,rules:['access-list 10 permit 192.168.30.64 0.0.0.63'],hint:'La wildcard 0.0.0.63 corresponde a un bloque de 64 direcciones, desde .64 hasta .127.'},
+ {id:5,lv:1,title:'Fuera del bloque /26',desc:'Comprueba el efecto de cambiar únicamente el último octeto.',n:10,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.30.128',dst:'172.16.1.4',proto:'udp',dp:53,rules:['access-list 10 permit 192.168.30.64 0.0.0.63'],hint:'La dirección .128 pertenece al siguiente bloque /26, no al de .64/26.'},
+ {id:6,lv:1,title:'La primera coincidencia prevalece',desc:'Observa el orden de estas ACE. ¿Puede una regla posterior revertir la primera coincidencia?',n:10,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.50.10',dst:'192.168.30.20',proto:'tcp',dp:443,rules:['access-list 10 permit any','access-list 10 deny host 192.168.50.10'],hint:'No continúes evaluando las reglas después de encontrar la primera coincidencia.'},
+ {id:7,lv:2,title:'ACL aplicada en otra entrada',desc:'Observa la interfaz real por la que ingresa el paquete; no basta con coincidir con el origen.',n:10,iface:'G0/0',dir:'in',ing:'G0/2',out:'G0/1',src:'192.168.10.10',dst:'192.168.30.20',proto:'tcp',dp:22,rules:['access-list 10 deny host 192.168.10.10','access-list 10 permit any'],hint:'Una ACL configurada IN en G0/0 no evalúa paquetes que entran por G0/2.'},
+ {id:8,lv:2,title:'ACL en la interfaz de salida',desc:'El paquete entra por G0/0 y sale por G0/1. La ACL está aplicada en dirección OUT.',n:10,iface:'G0/1',dir:'out',ing:'G0/0',out:'G0/1',src:'192.168.50.10',dst:'192.168.30.20',proto:'icmp',rules:['access-list 10 deny host 192.168.50.10','access-list 10 permit any'],hint:'Para OUT, compara la interfaz de salida del paquete con la interfaz donde está la ACL.'},
+ {id:9,lv:2,title:'Salida diferente',desc:'Una misma ACL puede existir en el router y no intervenir en este recorrido.',n:10,iface:'G0/1',dir:'out',ing:'G0/0',out:'G0/2',src:'192.168.50.10',dst:'10.10.2.15',proto:'tcp',dp:80,rules:['access-list 10 deny host 192.168.50.10','access-list 10 permit any'],hint:'OUT G0/1 solo evalúa tráfico que sale por G0/1.'},
+ {id:10,lv:2,title:'Coincidencia con wildcard en salida',desc:'La ACL estándar se evalúa después de determinar la salida del paquete.',n:10,iface:'G0/1',dir:'out',ing:'G0/0',out:'G0/1',src:'192.168.20.35',dst:'192.168.30.15',proto:'udp',dp:53,rules:['access-list 10 permit 192.168.20.0 0.0.0.255'],hint:'Primero comprueba que coincidan interfaz y dirección OUT; después, compara el origen.'},
+ {id:11,lv:2,title:'Regla para un host en tránsito',desc:'La ACL se aplica al salir de R1; el destino no figura en una ACL estándar.',n:10,iface:'G0/1',dir:'out',ing:'G0/2',out:'G0/1',src:'192.168.10.11',dst:'192.168.30.99',proto:'tcp',dp:443,rules:['access-list 10 deny host 192.168.10.10','access-list 10 permit 192.168.10.0 0.0.0.255'],hint:'No confundas dirección de la ACL (OUT) con dirección IPv4 del destino.'},
+ {id:12,lv:2,title:'El puerto no importa en ACL estándar',desc:'El paquete está destinado a SSH, pero la ACL estándar no filtra puertos.',n:10,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'172.16.9.9',dst:'192.168.30.10',proto:'tcp',dp:22,rules:['access-list 10 permit 172.16.0.0 0.0.255.255'],hint:'La ACL estándar evalúa únicamente la dirección IP de origen.'},
+ {id:13,lv:3,title:'Bloquear Telnet hacia un servidor',desc:'La ACE extendida compara origen, destino, protocolo y puerto destino.',n:101,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.20.10',dst:'192.168.30.10',proto:'tcp',dp:23,rules:['access-list 101 deny tcp 192.168.20.0 0.0.0.255 host 192.168.30.10 eq 23','access-list 101 permit ip any any'],hint:'Telnet utiliza TCP/23. Revisa que coincidan los demás campos.'},
+ {id:14,lv:3,title:'Mismo servidor, otro servicio',desc:'El host y destino no cambian, pero el puerto del paquete ahora es diferente.',n:101,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.20.10',dst:'192.168.30.10',proto:'tcp',dp:80,rules:['access-list 101 deny tcp 192.168.20.0 0.0.0.255 host 192.168.30.10 eq 23','access-list 101 permit ip any any'],hint:'Para coincidir con una ACE TCP, también debe coincidir el puerto si aparece en la regla.'},
+ {id:15,lv:3,title:'HTTP y HTTPS, acceso limitado',desc:'Solo se permiten los puertos TCP 80 y 443 para un servidor específico.',n:101,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.10.17',dst:'192.168.30.20',proto:'tcp',dp:443,rules:['access-list 101 permit tcp 192.168.10.0 0.0.0.255 host 192.168.30.20 eq 80','access-list 101 permit tcp 192.168.10.0 0.0.0.255 host 192.168.30.20 eq 443'],hint:'Si falla la primera ACE, continúa examinando la siguiente ACE de permiso.'},
+ {id:16,lv:3,title:'Tráfico fuera de los servicios permitidos',desc:'El origen y destino están autorizados para web, pero el paquete utiliza SSH.',n:101,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.10.17',dst:'192.168.30.20',proto:'tcp',dp:22,rules:['access-list 101 permit tcp 192.168.10.0 0.0.0.255 host 192.168.30.20 eq 80','access-list 101 permit tcp 192.168.10.0 0.0.0.255 host 192.168.30.20 eq 443'],hint:'Si los puertos no coinciden con ninguna ACE y no existe permit general, recuerda la regla final invisible.'},
+ {id:17,lv:3,title:'DNS: UDP no es TCP',desc:'La única regla permite consultas DNS mediante UDP hacia el servidor especificado.',n:101,iface:'G0/0',dir:'in',ing:'G0/0',out:'G0/1',src:'192.168.40.9',dst:'192.168.30.53',proto:'tcp',dp:53,rules:['access-list 101 permit udp 192.168.40.0 0.0.0.255 host 192.168.30.53 eq 53'],hint:'Un número de puerto igual no basta si el protocolo del paquete es diferente.'},
+ {id:18,lv:3,title:'Denegación específica entre redes',desc:'Se deniega una pareja de redes y se permite el resto del tráfico IPv4.',n:101,iface:'G0/1',dir:'out',ing:'G0/0',out:'G0/1',src:'192.168.11.20',dst:'192.168.30.12',proto:'icmp',rules:['access-list 101 deny ip 192.168.11.0 0.0.0.255 192.168.30.0 0.0.0.255','access-list 101 permit ip any any'],hint:'En una ACL extendida, ip incluye cualquier protocolo de capa IP, no solo TCP o UDP.'}
+];
+const $=id=>document.getElementById(id);
+let sequence=[],pos=0,answer=null,chosenAce='',checked=false,hintVisible=false,results=[],streak=0;
+const labels={permit:'Permitir por ACE',deny:'Denegar por ACE explícita',implicit:'Denegar por deny implícito',bypass:'No se evalúa esta ACL'};
+
+/* Explicaciones pedagógicas únicas por escenario: visibles después de cada respuesta. */
+const CASE_FEEDBACK={
+  1:{why:'La IP 192.168.10.10 coincide exactamente con host 192.168.10.10 en la ACE 1. R1 aplica deny y no llega a la regla permit any.',key:'Una coincidencia en una ACE de denegación termina inmediatamente la búsqueda.'},
+  2:{why:'192.168.10.25 no coincide con el host 192.168.10.10 de la ACE 1. La ACE 2 (permit any) sí coincide, por lo que se permite el paquete.',key:'Cuando una ACE no coincide, el router continúa con la siguiente.'},
+  3:{why:'La wildcard 0.0.0.255 de la ACE 1 exige que el origen comience con 192.168.20. El paquete llega desde 192.168.21.7, por lo que ninguna ACE coincide y se aplica deny implícito.',key:'Una ACE permit no autoriza direcciones fuera de su patrón; al final de la ACL se descarta lo no permitido.'},
+  4:{why:'La wildcard 0.0.0.63 cubre el intervalo 192.168.30.64–192.168.30.127. El origen 192.168.30.127 está dentro de ese intervalo y coincide con permit en la ACE 1.',key:'El extremo superior .127 pertenece al bloque /26 que comienza en .64.'},
+  5:{why:'La dirección 192.168.30.128 es la primera del bloque /26 siguiente; no pertenece al rango .64–.127 cubierto por la ACE 1. Se ejecuta el deny implícito.',key:'La wildcard 0.0.0.63 no cubre un bloque de direcciones ilimitado.'},
+  6:{why:'La ACE 1 (permit any) coincide con cualquier IPv4 de origen, incluida 192.168.50.10. El router permite el paquete sin consultar la ACE 2, aunque esta intente denegar el host.',key:'Las excepciones específicas deben colocarse antes de un permit any general.'},
+  7:{why:'El paquete entra por G0/2, pero la ACL 10 está asociada a G0/0 en dirección IN. La coincidencia con la IP del host no se comprueba: esta ACL no participa en el recorrido.',key:'La interfaz y la dirección de aplicación se verifican antes de examinar las ACE.'},
+  8:{why:'El paquete sale por G0/1 y allí se aplica la ACL 10 OUT. Como el origen 192.168.50.10 coincide con la primera ACE deny host, R1 descarta el paquete.',key:'Una ACL OUT filtra cuando el paquete abandona la interfaz de salida correspondiente.'},
+  9:{why:'La ACL 10 está aplicada OUT en G0/1, pero este paquete sale por G0/2. Ninguna entrada de esa ACL se consulta, independientemente de su dirección de origen.',key:'Una ACL configurada en otra interfaz no afecta este recorrido.'},
+ 10:{why:'El paquete sale por G0/1, donde está la ACL OUT. El origen 192.168.20.35 pertenece a 192.168.20.0/24 y coincide con la ACE 1 permit.',key:'En una ACL estándar se compara el origen, no el destino ni el puerto UDP.'},
+ 11:{why:'192.168.10.11 no es el host exacto 192.168.10.10 de la ACE 1. Sí pertenece a 192.168.10.0/24, por lo que coincide con la ACE 2 permit.',key:'La ACL estándar no compara 192.168.30.99 como destino; solo evalúa el origen.'},
+ 12:{why:'El origen 172.16.9.9 coincide con la red 172.16.0.0/16 de la única ACE permit. Aunque el paquete use TCP/22 (SSH), ese puerto no forma parte de los criterios de una ACL estándar.',key:'Las ACL IPv4 estándar filtran por dirección de origen, no por puerto ni protocolo.'},
+ 13:{why:'La ACL extendida IN recibe TCP desde 192.168.20.10 hacia 192.168.30.10 con puerto destino 23. Coinciden origen, destino, protocolo y puerto de la ACE 1 deny: el paquete se descarta.',key:'Una ACE extendida puede bloquear un servicio concreto sin bloquear los otros.'},
+ 14:{why:'La ACE 1 deniega TCP/23 (Telnet), pero este paquete usa TCP/80, por lo que esa regla no coincide. La ACE 2 permit ip any any permite el paquete.',key:'Tener el mismo origen y destino no basta si el puerto no coincide.'},
+ 15:{why:'La ACE 1 permite TCP/80, pero el destino del paquete usa TCP/443. La evaluación continúa y la ACE 2 autoriza TCP/443 (HTTPS) para ese mismo servidor.',key:'El router se detiene en la primera ACE que coincida completamente; en este caso, la ACE 2.'},
+ 16:{why:'El paquete usa TCP/22 (SSH) y no coincide ni con TCP/80 ni con TCP/443. Como la ACL no contiene un permiso posterior, R1 aplica el deny implícito.',key:'Permitir HTTP y HTTPS no equivale a permitir cualquier servicio del mismo servidor.'},
+ 17:{why:'Aunque el puerto destino es 53, el paquete es TCP mientras que la única ACE exige UDP. No existe coincidencia completa y se ejecuta el deny implícito.',key:'En ACL extendidas deben coincidir todos los campos indicados, incluido el protocolo.'},
+ 18:{why:'La ACL OUT actúa en G0/1. El origen pertenece a 192.168.11.0/24 y el destino a 192.168.30.0/24; además, la palabra ip de la ACE 1 incluye ICMP sobre IPv4. La regla deny coincide.',key:'En una ACL extendida, ip abarca el tráfico IPv4, no únicamente TCP o UDP.'}
+};
+function learnerChoiceLabel(kind,ace){const name=labels[kind]||'Sin selección';return name+((kind==='permit'||kind==='deny')&&ace!==''?' (ACE '+(Number(ace)+1)+')':'')}
+
+function parseIPv4(str){const a=str.split('.').map(Number);return a.length===4&&a.every(x=>Number.isInteger(x)&&x>=0&&x<=255)?a:null}
+function addrMatch(ip,rule){if(rule.type==='any')return true;const a=parseIPv4(ip),b=parseIPv4(rule.ip),w=parseIPv4(rule.wc);if(!a||!b||!w)return false;return a.every((x,i)=>((x^b[i])&(~w[i]&255))===0)}
+function parseACE(raw){const t=raw.trim().split(/\s+/);if(t[0]!=='access-list')throw Error('ACE sin comando access-list');const num=Number(t[1]),act=t[2];let i=3;const extended=(num>=100&&num<=199)||(num>=2000&&num<=2699);
+function readAddr(){let val=t[i++];if(val==='any')return{type:'any'};if(val==='host')return{type:'net',ip:t[i++],wc:'0.0.0.0'};let mask=t[i++];return{type:'net',ip:val,wc:mask}}
+function readPort(){const op=t[i];if(!['eq','neq','lt','gt','range'].includes(op))return null;i++;const a=Number(t[i++]);const b=op==='range'?Number(t[i++]):null;return{op,a,b}}
+if(!extended)return{num,act,extended:false,src:readAddr(),raw};let proto=t[i++];let src=readAddr();let srcPort=['tcp','udp'].includes(proto)?readPort():null;let dst=readAddr();let dstPort=['tcp','udp'].includes(proto)?readPort():null;return{num,act,extended:true,proto,src,srcPort,dst,dstPort,raw}}
+function portMatch(v,p){if(!p)return true;if(!Number.isInteger(Number(v)))return false;v=Number(v);if(p.op==='eq')return v===p.a;if(p.op==='neq')return v!==p.a;if(p.op==='lt')return v<p.a;if(p.op==='gt')return v>p.a;if(p.op==='range')return v>=p.a&&v<=p.b;return false}
+function aceMatch(ace,p){if(ace.extended&&ace.proto!=='ip'&&ace.proto!==p.proto)return{ok:false,why:'El protocolo del paquete ('+p.proto.toUpperCase()+') no coincide con '+ace.proto.toUpperCase()+'.'};
+if(!addrMatch(p.src,ace.src))return{ok:false,why:'La IPv4 de origen '+p.src+' no coincide con el patrón de origen.'};
+if(!ace.extended)return{ok:true,why:'Coincide la IPv4 de origen (único criterio de una ACL estándar).'};
+if(!portMatch(p.sp,ace.srcPort))return{ok:false,why:'El puerto de origen no cumple la condición de la ACE.'};
+if(!addrMatch(p.dst,ace.dst))return{ok:false,why:'La IPv4 de destino '+p.dst+' no coincide con el patrón de destino.'};
+if(!portMatch(p.dp,ace.dstPort))return{ok:false,why:'El puerto de destino '+(p.dp??'—')+' no cumple la condición de la ACE.'};
+return{ok:true,why:'Coinciden todos los campos que exige la ACE.'}}
+function evaluate(s){const trace=[];if((s.dir==='in'&&s.iface!==s.ing)||(s.dir==='out'&&s.iface!==s.out)){
+return{kind:'bypass',idx:null,trace:[{state:'bypass',label:'ACL no aplicada a este recorrido',why:'La ACL está en '+s.iface+' ('+s.dir.toUpperCase()+') pero el paquete '+(s.dir==='in'?'ingresa por '+s.ing:'sale por '+s.out)+'.'}]}}
+for(let i=0;i<s.rules.length;i++){const ace=parseACE(s.rules[i]);const r=aceMatch(ace,s);trace.push({state:r.ok?'hit':'skip',label:'ACE '+(i+1)+' — '+ace.act,why:r.why});if(r.ok)return{kind:ace.act==='permit'?'permit':'deny',idx:i,trace}}
+trace.push({state:'implicit',label:'Deny implícito',why:'Ninguna ACE anterior coincidió; el router descarta el paquete.'});return{kind:'implicit',idx:null,trace}}
+function selectScenario(){return sequence[pos]}
+function updateStats(){const total=sequence.length;const done=results.length;const ok=results.filter(x=>x.correct).length;$('statCount').textContent=done+' / '+total;$('statCorrect').textContent=ok;$('statPercent').textContent=(done?Math.round(ok/done*100):0)+' %';$('statStreak').textContent=streak;$('progressFill').style.width=(total?done/total*100:0)+'%';$('progressMeta').textContent=total+' escenarios'}
+function buildPacket(s){let entries=[['IPv4 origen',s.src],['IPv4 destino',s.dst],['Protocolo',s.proto.toUpperCase()],['Puerto origen',s.sp??'No especificado'],['Puerto destino',s.dp??'No aplica'],['ACL configurada',s.dir.toUpperCase()+' en '+s.iface]];if(!['tcp','udp'].includes(s.proto))entries=entries.filter(x=>!x[0].includes('Puerto'));$('packetGrid').innerHTML=entries.map(([k,v])=>'<div class="fact '+(k==='IPv4 origen'?'source-fact':k==='IPv4 destino'?'destination-fact':'')+'"><div class="key">'+escapeHTML(k)+'</div><div class="value">'+escapeHTML(String(v))+'</div></div>').join('')}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function render(){checked=false;answer=null;chosenAce='';hintVisible=false;document.querySelectorAll('.choice').forEach(el=>{el.classList.remove('selected');el.disabled=false;el.setAttribute('aria-pressed','false')});$('aceField').hidden=true;$('aceSelect').value='';$('check').disabled=false;$('hintBtn').disabled=false;$('hintBox').hidden=true;$('notice').textContent='';$('feedback').hidden=true;$('afterCheck').hidden=true;$('endPanel').hidden=true;$('questionArea').hidden=false;
+const s=selectScenario();if(!s){renderEnd();return}
+buildPacket(s);
+$('scenarioTitle').textContent=s.title;$('levelBadge').textContent='Nivel '+s.lv+' · '+(s.lv===1?'ACL estándar':s.lv===2?'Interfaces':'ACL extendida');$('scenarioDescription').textContent=s.desc;$('diagramSource').textContent=s.src;$('diagramDest').textContent=s.dst;$('directionBadge').textContent='ACL '+s.dir.toUpperCase();$('ingressTag').textContent=s.ing;$('egressTag').textContent=s.out;$('aclPlacement').textContent='ACL '+s.n+' · '+s.iface+' · '+s.dir.toUpperCase();$('inAclMarker').hidden=true;$('outAclMarker').hidden=true;
+$('aclHeading').textContent='ACL '+s.n+' · '+(s.n<100?'Estándar':'Extendida');$('attachment').textContent='ip access-group '+s.n+' '+s.dir;
+$('aclRules').innerHTML=s.rules.map((r,i)=>'<div class="aclrow" id="rule-'+i+'"><span class="ace-index">ACE '+(i+1)+'</span><code>'+escapeHTML(r)+'</code></div>').join('');$('implicitNote').textContent='Existe un deny implícito oculto después de la última ACE.';
+$('aceSelect').innerHTML='<option value="">Selecciona una ACE…</option>'+s.rules.map((r,i)=>'<option value="'+i+'">ACE '+(i+1)+' — '+escapeHTML(r)+'</option>').join('');$('progressLabel').textContent='Escenario '+(pos+1)+' de '+sequence.length;updateStats()}
+function setChoice(c){if(checked)return;answer=c;document.querySelectorAll('.choice').forEach(el=>{const active=el.dataset.choice===c;el.classList.toggle('selected',active);el.setAttribute('aria-pressed',String(active))});$('aceField').hidden=!(c==='permit'||c==='deny');$('notice').textContent=''}
+function verify(){if(checked)return;const s=selectScenario();if(!s)return;if(!answer){$('notice').textContent='Selecciona una de las cuatro decisiones.';return}if((answer==='permit'||answer==='deny')&&$('aceSelect').value===''){$('notice').textContent='Selecciona también la ACE que coincide primero.';return}
+checked=true;chosenAce=$('aceSelect').value;const expected=evaluate(s);if(expected.kind!=='bypass'){if(s.dir==='in'&&s.iface===s.ing)$('inAclMarker').hidden=false;if(s.dir==='out'&&s.iface===s.out)$('outAclMarker').hidden=false;}const ok=answer===expected.kind&&((answer==='permit'||answer==='deny')?Number(chosenAce)===expected.idx:true);
+results.push({scenario:s,answer,ace:chosenAce,expected,correct:ok});streak=ok?streak+1:0;updateStats();$('check').disabled=true;$('hintBtn').disabled=true;document.querySelectorAll('.choice').forEach(el=>el.disabled=true);$('aceSelect').disabled=true;
+const ansText=(expected.kind==='permit'||expected.kind==='deny')?labels[expected.kind]+' (ACE '+(expected.idx+1)+')':labels[expected.kind];
+const pedagogical=CASE_FEEDBACK[s.id];
+const mismatch=ok?'':('<p class="your-answer"><strong>Elegiste:</strong> '+escapeHTML(learnerChoiceLabel(answer,chosenAce))+'. <strong>Respuesta correcta:</strong> '+escapeHTML(ansText)+'.</p>');
+$('feedback').hidden=false;$('feedback').className='feedback '+(ok?'ok':'bad');$('feedback').innerHTML='<div class="ftitle">'+(ok?'Respuesta correcta.':'Respuesta incorrecta: observa el motivo.')+'</div>'+mismatch+'<section class="case-explanation" aria-label="Retroalimentación del escenario"><h3>¿Por qué ocurre en este caso?</h3><p>'+escapeHTML(pedagogical.why)+'</p><p><strong>Concepto para recordar:</strong> '+escapeHTML(pedagogical.key)+'</p></section><div class="trace"><h3>Evaluación ACE por ACE</h3>'+expected.trace.map(t=>'<div class="trace-item '+(t.state==='hit'?'hit':t.state==='implicit'?'implicit':'')+'"><strong>'+escapeHTML(t.label)+'</strong><span>'+escapeHTML(t.why)+'</span></div>').join('')+'</div>';
+if(expected.kind==='permit'||expected.kind==='deny')$('rule-'+expected.idx).classList.add('match');
+if(expected.kind==='implicit')$('implicitNote').textContent='DENY IMPLÍCITO: el paquete se descarta porque ninguna ACE coincide.';
+if(expected.kind==='bypass')$('implicitNote').textContent='La ACL ni siquiera se procesa: la interfaz o dirección no corresponde al recorrido.';
+$('afterCheck').hidden=false;$('next').textContent=pos===sequence.length-1?'Ver resultados finales →':'Siguiente paquete →';$('feedback').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function renderEnd(){const done=results.length,ok=results.filter(x=>x.correct).length;let pct=done?Math.round(ok/done*100):0;
+$('questionArea').hidden=true;$('feedback').hidden=true;$('afterCheck').hidden=true;$('endPanel').hidden=false;
+$('endPanel').innerHTML='<div class="summary"><h2>Actividad finalizada</h2><p><strong>'+ok+' / '+done+'</strong> decisiones correctas</p><p>'+pct+' % de aciertos. '+(pct>=85?'Buen dominio de las ACL.':pct>=60?'Repasa especialmente los casos con errores.':'Practica de nuevo el orden de evaluación y la interfaz aplicada.')+'</p><div class="actions" style="justify-content:center;margin-top:20px"><button class="btn primary" id="again">Repetir actividad</button><button class="btn" id="downloadEnd">Exportar CSV</button></div></div>';
+$('scenarioTitle').textContent='Práctica completada';$('scenarioDescription').textContent='Puedes reiniciar o descargar tus resultados. Ningún dato se envía a un servidor.';$('progressLabel').textContent='Actividad completada';$('progressFill').style.width='100%';$('again').addEventListener('click',start);$('downloadEnd').addEventListener('click',downloadResults)}
+// Aleatorizar cada sesión sin modificar los 18 casos originales.
+function shuffleCases(items){
+  const shuffled=items.slice();
+  for(let i=shuffled.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+  }
+  return shuffled;
+}
+function start(){
+  const lv=$('filter').value;
+  const previousOrder=sequence.map(s=>s.id).join(',');
+  sequence=shuffleCases(CASES.filter(s=>lv==='all'||String(s.lv)===lv));
+  // Evitar repetir exactamente el mismo orden al reiniciar la misma práctica.
+  if(sequence.length>1&&sequence.map(s=>s.id).join(',')===previousOrder){
+    [sequence[0],sequence[1]]=[sequence[1],sequence[0]];
+  }
+  pos=0;results=[];streak=0;
+  $('aceSelect').disabled=false;
+  render();
+}
+function next(){if(!checked)return;pos++;$('aceSelect').disabled=false;render();window.scrollTo({top:0,behavior:'smooth'})}
+function downloadResults(){if(!results.length){alert('Primero responde al menos un escenario para exportar resultados.');return}
+const head=['Escenario','Nivel','IPv4 origen','IPv4 destino','Protocolo','Interfaz entrada','Interfaz salida','ACL aplicada','Respuesta estudiante','ACE elegida','Respuesta correcta','Acierto'];
+const rows=results.map(r=>[r.scenario.id,r.scenario.lv,r.scenario.src,r.scenario.dst,r.scenario.proto,r.scenario.ing,r.scenario.out,r.scenario.n+' '+r.scenario.iface+' '+r.scenario.dir,labels[r.answer],(r.answer==='permit'||r.answer==='deny')?Number(r.ace)+1:'—',labels[r.expected.kind]+(r.expected.idx!==null?' (ACE '+(r.expected.idx+1)+')':''),r.correct?'Sí':'No']);
+const csv=[head,...rows].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='resultados_simulador_ACL_ENSA.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)}
+for(const el of document.querySelectorAll('.choice'))el.addEventListener('click',()=>setChoice(el.dataset.choice));
+$('filter').addEventListener('change',start);$('aceSelect').addEventListener('change',e=>{chosenAce=e.target.value;$('notice').textContent=''});$('check').addEventListener('click',verify);$('next').addEventListener('click',next);$('restart').addEventListener('click',()=>{if(results.length&&!confirm('¿Reiniciar y borrar las respuestas de esta sesión?'))return;start()});$('export').addEventListener('click',downloadResults);
+$('hintBtn').addEventListener('click',()=>{const s=selectScenario();if(!s)return;hintVisible=!hintVisible;$('hintBox').hidden=!hintVisible;$('hintBox').textContent='Pista: '+s.hint;$('hintBtn').textContent=hintVisible?'Ocultar pista':'Pista'});
+$('helpBtn').addEventListener('click',()=>alert('1. Identifica las interfaces de entrada y salida de R1.\n2. Comprueba si la ACL actúa IN o OUT en ese recorrido.\n3. Compara el paquete con las ACE en orden.\n4. Selecciona Permitir, Denegar explícitamente, Denegar implícitamente o ACL no evaluada.\n5. Cuando elijas una ACE explícita, indica cuál coincide primero.\n6. Comprueba tu decisión y revisa la explicación.\n\nNo se requiere Internet y el archivo funciona de forma local.'));
+document.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)||e.altKey||e.ctrlKey||e.metaKey)return;const cs=['permit','deny','implicit','bypass'];if(['1','2','3','4'].includes(e.key)&&!checked)setChoice(cs[Number(e.key)-1]);if(e.key==='Enter'){if(checked)next();else verify()}});
+start();
+</script>
+</body>
+</html>
